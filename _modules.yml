@@ -1,0 +1,10 @@
+config:
+    renderer: markdown
+
+modules:
+  intro:
+    name: Introduction
+  benchmark:
+    name: Benchmark
+  finish:
+    name: Conclusion
