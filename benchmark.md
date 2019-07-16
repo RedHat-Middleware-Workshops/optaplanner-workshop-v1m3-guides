@@ -1,17 +1,17 @@
 
-# Easy Java Score Calculator
+# Benchmark
 
 In this section you will learn
 
-1. What a `ScoreCalculator` is.
+1. What the  `OptaPlanner Benchmark` is.
 
-2. How to implement an _Easy Score Calculator_ in Java.
+2. The different _Heuristic Algorithms_ that OptaPlanner supports.
 
-3. How a `ValueRangeProvider` controls which planning values can be assigned to a planning entity.
+3. How to choose the right algorithm for your problem.
 
-In the previous lab we created our initial domain model, consisting of a planning entity (`CloudProcess`), a planning variable (the many-to-one `computer` relationship between `CloudProcess` and `CloudComputer`), and the planning solution (`CloudBalance`).
+In the previous lab we've implemented our `ScoreCalculator` and _constraints_ and we ran our first full run of our optimization application for the _Cloud Balancing_ problem. Let's now try to power-tweak our application by configuring different heuristic algorithms.
 
-## The Score and Constraints
+## The Opt
 
 When solving a problem, OptaPlanner tries a lot of different potential solutions (in a smart way, using sophisticated A.I. heuristic algorithms). For each potential solution, OptaPlanner calculates the _score_ of the solution.
 
