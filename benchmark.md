@@ -11,79 +11,126 @@ In this section you will learn
 
 In the previous lab we've implemented our `ScoreCalculator` and _constraints_ and we ran our first full run of our optimization application for the _Cloud Balancing_ problem. Let's now try to power-tweak our application by configuring different heuristic algorithms.
 
-## The Opt
+## The Benchmark
 
-When solving a problem, OptaPlanner tries a lot of different potential solutions (in a smart way, using sophisticated A.I. heuristic algorithms). For each potential solution, OptaPlanner calculates the _score_ of the solution.
+OptaPlanner Benchmarker can be used to benchmark:
 
-There are various types of _scores_, giving you flexibility wrt the score that you would like to use in your application, e.g.:
+* different algorithms.
+* different algorithm configurations.
+* different datasets.
 
-- `SimpleScore`: supports 1 score-level.
-- `HardSoftScore`: supports 2 score-levels, hard and soft.
-- `HardMediumSoftScore` supports 3 score-levels, hard, mediuma and soft,
-- `BendableScore`: supports a configurable number of score levels.
-
-.... and there are many more. Which score to use depends on the requirements of your project and the categorization of your constraints.
-
-In this lab, in our _Cloud Balancing_ problem, we require 2 constraints and there 2 score levels:
-
-- Hard Constraints: These are constraints that must not be broken. A broken hard constraints means that the given solution is _infeasible_. An example is when the processes that are assigned to a computer require more resources than are available on the computer.
-- Soft Constraints: These are the constraints we want to optimize on, and usually are not 0. In our _Cloud Balancing_ problem, we want to minimize the costs, and hence the costs is our soft constraint.
+and a combination of the above. It's an excellent tool to benchmark your solution and to create a report that indicates if your OptaPlanner solution performs as expected. It also helps to _power tweak_ your solution to create even better solutions to your problem than you already have (notice that a 2% better score can mean a substantial amount of resources and/or money in a real world application).
 
 
-To be able to keep track of the _score_ of our solution, the planning solution class, our `CloudBalance` class, needs to hold the score in a variable.
+1. Create a new package called `org.optaplanner.examples.cloudbalancing.benchmark` in the `src/main/java` folder. We can do this in CodeReady Workspaces by creating a new folder called `org/optaplanner/examples/cloudbalancing/benchmark` in the `src/main/java` folder.
 
-1. Open CodeReady Workspaces and open your project.
+2. In this folder, create a new file called `CloudBalancingBenchmarker.java`.
 
-2. Add the following variable to your `CloudBalance` class and generate getters and setters for this new variable.
+3. Create a `main` method:
 
-```
-private HardSoftScore scoreHolder;
-```
-3. Annotate the getter of the score with the `@PlanningScore` annotation:
-
-```
-@PlanningScore
-public HardSoftScore getScore() {
-  return score;
+~~~java
+public static void main(String[] args) {
 }
-```
+~~~
 
-4. Run a Maven Build to verify your project still compiles correctly.
+4. Save the file (note that in CodeReady Workspaces, files are automatically saved).
 
-With our _score_ variable added, our planning solution can now keep track of the score of a solution and compare it with the score of the current best solution.
+OptaPlanner provides a very simple, easy to use, API that gets you started with the OptaPlanner Benchmark in just a few lines of code. On top of that, OptaPlanner provides a vast array of configuration options to configure and tweak the Benchmarker to your specific needs.
 
-## Planning Entity Collection
+The easiest way to get started is to create a Benchmarker from an existing `SolverFactory`, like the `SolverFactory` we create in our `CloudBalancingSolverTest`.
 
-OptaPlanner needs to know which methods of our planning solution class provides the collection of planning entities. Since our planning entity is the `Process` class, we need to find the method that provides the collection of processes. In our `CloudBalance` class, this is the `getProcessList`. Annotate this method with the `@PlanningEntityCollectionProperty`:
+1. In the `main` method of our `CloudBalancingBenchmarker` class, add the following code:
 
-```
-@PlanningEntityCollectionProperty
-public List<CloudProcess> getProcessList() {
-  return processList;
+~~~java
+public static void main(String[] args) {
+  SolverFactory<CloudBalance> solverFactory = SolverFactory.createFromXmlResource("org/optaplanner/examples/cloudbalancing/solver/cloudBalancingSolverConfig.xml");
+  PlannerBenchmarkFactory benchmarkFactory = PlannerBenchmarkFactory.createFromSolverFactory(solverFactory);
 }
-```
+~~~
 
-## Planning Variable Ref
+2. Save the file (note that in CodeReady Workspaces, files are automatically saved).
 
-In order to be able to assign values to the planning entity's planning variable, OptaPlanner needs to know the possible values it can assign to the variable. This is done via a component called the `ValueRangeProvider`.
+This creates a new `BenchmarkFactory` component from an existing `SolverFactory`. It uses the _Solver Configuration_ configured on the `SolverFactory`. Hence, the Benchmark will run with the exact same configuration as the configuration we've used in our unit-tests so far.
 
-A `ValueRangeProvider` is usually defined on the `PlanningSolution`, although there are use-case in which the provider is defined on the `PlanningEntity`, for example when the possible value range is coupled to the entity itself. In our use-case however, the value range is the list of all available `CloudComputer`s, and is defined on our planning solution class `CloudBalance`
+Next, we need to load the data-set we want to use in our benchmark. In this case we will use the data-set that contains 100 computers and 300 processes. Note that we can re-user our `CloudBalanceRepository` class to load the data-set.
 
-1. Open CodeReady Workspaces and open your project.
+1 In the `main` method of our `CloudBalanceBenchmark`, add the code to load the dataset.
 
-2. Open the `CloudBalance` class and locate its `getComputerList` method. This method provides the value range of our planning variable.
+~~~java
+public static void main(String[] args) {
+  SolverFactory<CloudBalance> solverFactory = SolverFactory.createFromXmlResource("org/optaplanner/examples/cloudbalancing/solver/cloudBalancingSolverConfig.xml");
+  PlannerBenchmarkFactory benchmarkFactory = PlannerBenchmarkFactory.createFromSolverFactory(solverFactory);
 
-3. Annotate the method with the following annotation:
-```
-@ValueRangeProvider(id = "computerRange")
-public List<CloudComputer> getComputerList() {
-```
+  //Project build directory is provided as an argument to this method
+  *String projectBuildPath = args[0];*
+  *File dataSetOne = new File(projectBuildPath + File.separator + "data/cloudbalancing/unsolved/100computers-300processes.xml");*
+  *CloudBalance cloudBalanceDataSet1 = CloudBalanceRepository.load(dataSetOne);*
+}
+~~~
++
+. With our data-set loaded, we can now create and run the Benchmarker.
++
+[subs="quotes"]
+----
+public static void main(String[] args) {
+  SolverFactory<CloudBalance> solverFactory = SolverFactory.createFromXmlResource("org/optaplanner/examples/cloudbalancing/solver/cloudBalancingSolverConfig.xml");
+  PlannerBenchmarkFactory benchmarkFactory = PlannerBenchmarkFactory.createFromSolverFactory(solverFactory);
 
-4. We now need to define the value range provider on our planning variable. Open the `CloudProcess` class, i.e. our planning entity. Locate the `getComputer` method that we've annotated earlier with our `@PlanningVariable` annotation. Add the _value range provider_ references to the annotation to refer to the `ValueRangeProvider` we just configured on our planning solution class.
-```
-@PlanningVariable(valueRangeProviderRefs = {"computerRange"})
-```
+  //Project build directory is provided as an argument to this method
+  String projectBuildPath = args[0];
+  File dataSetOne = new File(projectBuildPath + File.separator + "data/cloudbalancing/unsolved/100computers-300processes.xml");
+  CloudBalance cloudBalanceDataSet1 = CloudBalanceRepository.load(dataSetOne);
 
-5. Run a Maven Build to verify that the project compiles correctly.
+  *PlannerBenchmark benchmark = benchmarkFactory.buildPlannerBenchmark(cloudBalanceDataSet1);*
+  *benchmark.benchmark();*
+}
+----
++
+. Save the file (note that in CodeReady Workspaces, files are automatically saved).
 
-In the next part of the lab, we will create the code and infrastructure to load our sample data.
+We now need to execute the class. We've provided a Maven _profile_ in the project's POM file that executes the `CloudBalancingBenchmarker` class. To execute the Maven goal with the given profile, we need to create a new Maven build script.
+
+. Open the _"Manage commands"_ section in your CodeReady Workspaces environment:
++
+image:images/codeready-manage-commands.png[]
++
+. In the _"Build"_ category, click the `+` button to add a new _build configuration_. Select _"Maven"_.
++
+image:images/codeready-benchmarker-maven-build.png[]
++
+. Name your new build configuration `benchmarker` and configure it with the following line:
++
+----
+mvn clean install exec:java -DskipTests -Pbenchmarker -f ${current.project.path}
+----
++
+image:images/codeready-benchmarker-maven-build-config.png[]
++
+. Run the build by clicking on the green _"Run"_ button.
+
+After the benchmark has completed, a benchmark report will be available in the `local/benchmarkReport/{date-time}` folder in your CodeReady workspace.
+
+. Open the `index.html` file in the `local/benchmarkReport/{date-time}` folder. You can open the `index.html` by right-clicking on the file and selecting _"Preview"_.
++
+image:images/codeready-benchmarker-index-html.png[]
++
+. Inspect the _Best Score Summary_ section:
+    * This section visualizes which _solver configuration_ produced the best score. Since we've only run the benchmarker with a single _solver configuration_. This graph currently only shows one entry. This graph is useful when you've defined multiple _solver configurations_, using different heuristic algorithmns, or different configurations of these algorithms, and you want to analyse which configuration works best for your problem and data-set.
++
+image:images/benchmark-best-score-summary.png[]
++
+. Inspect the _Performance Summary_:
+    * This section shows the _Score Calculation Speed* of your configuration. This calculation speed is extremely important in an OptaPlanner project. The higher the calculation speed, the more moves OptaPlanner can execute and calculate in a given timeframe, the better the solution that OptaPlanner provides. A _Score Calculation Speed_ below 1000m should be addressed.
++
+image:images/benchmark-performance-summary.png[]
++
+. Inspect the _Problem Benchmarks_ section:
+    * This part of the report shows the progression of the _score_ over _time. As stated earlier, in the beginning of an OptaPlanner run, the score usually improves very quickly, after which finding better solutions slows down. The graph shown in the benchmark report clearly visualizes this. This is a great tool to:
+        ... Inspect whether your solver follows this common pattern. If it does not, this usually indicates a problem in your solution, for example, a _score calculation count_ that is too low, or a problem that is stuck in a _local optima_.
+        ... Compare the score progression of multiple solver configurations to determine which solver configuration works best for your planning problem.
+        ... The point of _diminishing returns_, which can indicate how long you should run the solver (on an environment with comparable hardware).
+
+image:images/optaplanner-benchmark.png[]
+
+
+Furthermore, the report shows the actual _Solver Configuration_ used for each run, as well as information of the system on which the benchmark ran.
