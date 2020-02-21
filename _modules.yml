@@ -6,5 +6,7 @@ modules:
     name: Introduction
   benchmark:
     name: Benchmark
+  benchmarkConfig:
+    name: Benchmark Config
   finish:
     name: Conclusion
